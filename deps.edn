@@ -1,0 +1,16 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        http-kit/http-kit {:mvn/version "2.6.0"}
+        mvxcvi/multihash {:git/url "https://github.com/borkdude/clj-multihash"
+                          :git/sha "df9a134b17a3f53efb34265098ee0ac1f2f01626"}
+        com.taoensso/timbre {:mvn/version "6.0.4"}
+        babashka/fs {:mvn/version "0.2.12"}
+        cheshire/cheshire {:mvn/version "5.11.0"}
+        babashka/cli {:git/url "https://github.com/babashka/cli"
+                      :git/sha "9d83d70c5c030a075bb82c0eb41b6281ae0104d8"}
+        ring/ring-codec {:mvn/version "1.2.0"}}
+ :aliases
+ {:dev {:extra-paths ["dev"]
+        :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.12.707"}
+                     org.clojars.abhinav/snitch {:mvn/version "0.1.13"}}}
+  :neil {:project {:name cas-client/cas-client}}}}

@@ -1,0 +1,6 @@
+{:paths ["src"]
+ :deps {deps/deps {:local/root "."}}
+
+ :bbin/bin {clerk-cas {:main-opts ["-m" "nextjournal.cas-client.cli"]
+                       :tool true}}
+ }
