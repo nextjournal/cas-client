@@ -1,6 +1,6 @@
 (ns nextjournal.cas-client.cli
   (:require [babashka.cli :as cli]
-            [nextjournal.cas-client.api :as api]
+            [nextjournal.cas-client :as cas-client]
             [clojure.string :as str]))
 
 (declare cmds)
@@ -31,8 +31,8 @@
           (println error))
         (println res)))))
 
-(def cmds [{:cmds ["put"] :fn (wrap api/put)}
-           {:cmds ["get"] :fn (wrap api/get)}
+(def cmds [{:cmds ["put"] :fn (wrap cas-client/put)}
+           {:cmds ["get"] :fn (wrap cas-client/get)}
            {:cmds ["help"] :fn print-help}
            {:cmds [] :fn print-help}])
 

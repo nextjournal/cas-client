@@ -1,4 +1,5 @@
-(ns nextjournal.cas-client.api
+(ns nextjournal.cas-client
+  (:refer-clojure :exclude [get])
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [nextjournal.cas-client.hashing :as h]
