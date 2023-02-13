@@ -1,4 +1,5 @@
 (ns nextjournal.cas-client.hashing
+  (:refer-clojure :exclude [hash])
   (:require [multihash.core :as multihash]
             [multihash.digest :as digest]))
 
