@@ -23,19 +23,13 @@
                                      ""]
                                     available-cmds)))))
 
-(defn- wrap-with-output-reporting [f]
+(defn- wrap [f]
   (fn [x]
     (let [res (f x)]
       (if-let [error (:error res)]
         (binding [*out* *err*]
           (println error))
         (println res)))))
-
-(defn- wrap [f]
-  (fn [{:keys [opts]}]
-    (let [{:keys [deploy-conf]} opts]
-      ((-> f
-           (wrap-with-output-reporting)) opts))))
 
 (def cmds [{:cmds ["put"] :fn (wrap api/put)}
            {:cmds ["get"] :fn (wrap api/get)}
