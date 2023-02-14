@@ -1,7 +1,7 @@
 (ns nextjournal.cas-client.hashing
   (:refer-clojure :exclude [hash])
-  (:require [multihash.core :as multihash]
-            [multihash.digest :as digest]))
+  (:require [multiformats.hash :as hash]
+            [multiformats.base.b58 :as b58]))
 
 (defn hash [stream]
-  (str (multihash/base58 (digest/sha2-512 stream))))
+  (-> stream hash/sha2-512 hash/encode b58/format-btc str))
