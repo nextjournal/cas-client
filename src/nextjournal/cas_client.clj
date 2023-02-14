@@ -29,7 +29,7 @@
                 :or {host *tags-host*}}]
   (str host "/" namespace "/" tag (when path (str "/" path))))
 
-(defn tag-get [{:as opts}]
+(defn tag-get [opts]
   (-> @(http/get (tag-url opts))
       :body))
 
@@ -99,24 +99,24 @@
                  tags-host *tags-host*}}]
   (assert (not (every? some? #{target path}))
           "Set either target or path")
-  (cond (some? target) (tag-put opts)
-        (some? path) (cas-put opts)))
+  (cond (some? target) (tag-put (assoc opts :host tags-host))
+        (some? path) (cas-put (assoc opts :host cas-host))))
 
 (defn get [{:as opts
             :keys [cas-host tags-host tag]
             :or {cas-host *cas-host*
                  tags-host *tags-host*}}]
   (if (some? tag)
-    (tag-get opts)
-    (cas-get opts)))
+    (tag-get (assoc opts :host tags-host))
+    (cas-get (assoc opts :host cas-host))))
 
 (comment
-  (def r (cas-put {:path "test/resources/foo"}))
-  (def r (cas-put {:path "test/resources/foo.bak"
-                   :namespace "Sohalt"
-                   :tag "test-tag"
-                   :auth-token (System/getenv "GITHUB_TOKEN")}))
-  (def m-path (get r "manifest-id"))
-  (def m-path (str "/tree/" (get r "manifest-id")))
+  (def r (put {:path "test/resources/foo"}))
+  (def r (put {:cas-host "http://cas.dev.clerk.garden:8090"
+               :tags-host "http://storage.dev.clerk.garden:8090"
+               :path "test/resources/foo.bak"
+               :namespace "Sohalt"
+               :tag "test-tag"
+               :auth-token "foo" #_(System/getenv "GITHUB_TOKEN")}))
   (def m (get r "manifest"))
   (def k (get m "bar/baz.txt")))
