@@ -39,7 +39,7 @@
       (= 200)))
 
 (defn cas-url [{:as opts
-                :keys [host key namespace tag]
+                :keys [host key]
                 :or {host *cas-host*}}]
   (str host "/" key
        (let [query-params (ring-codec/form-encode (select-keys opts [:filename :content-type]))]
@@ -118,6 +118,4 @@
                :path "test/resources/foo.bak"
                :namespace "Sohalt"
                :tag "test-tag"
-               :auth-token "foo" #_(System/getenv "GITHUB_TOKEN")}))
-  (def m (get r "manifest"))
-  (def k (get m "bar/baz.txt")))
+               :auth-token "foo" #_(System/getenv "GITHUB_TOKEN")})))
