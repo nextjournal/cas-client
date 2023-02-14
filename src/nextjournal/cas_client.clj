@@ -16,12 +16,14 @@
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
 
-(defn tag-put [{:keys [host auth-token namespace tag target]
-                :or {host *tags-host*}}]
-  (-> @(http/post (str  host "/" namespace "/" tag)
-                  {:headers {"auth-token" auth-token
-                             "content-type" "plain/text"}
-                   :body target})))
+(defn tag-put [{:keys [host auth-token namespace tag target async]
+                :or {host *tags-host*
+                     async false}}]
+  (cond-> (http/post (str  host "/" namespace "/" tag)
+                     {:headers {"auth-token" auth-token
+                                "content-type" "plain/text"}
+                      :body target})
+    (not async) (deref)))
 
 (defn tag-url [{:keys [host namespace tag path]
                 :or {host *tags-host*}}]
@@ -54,8 +56,9 @@
       :body
       slurp))
 
-(defn cas-put [{:keys [path host auth-token namespace tag]
-                :or {host *cas-host*}}]
+(defn cas-put [{:keys [path host auth-token namespace tag async]
+                :or {host *cas-host*
+                     async false}}]
   (let [f (io/file path)
         prefix (if (fs/directory? path) (str f "/") "")
         files (->> (file-seq f)
@@ -77,18 +80,21 @@
                                   :filename filename
                                   :content-type "application/clerk-cas-hash"
                                   :content hash}) files-already-uploaded))
-        {:as res :keys [status body]} @(http/post
-                                        host
-                                        (cond-> {:multipart multipart}
-                                          tag (merge {:query-params {:tag (str namespace "/" tag)}
-                                                      :headers {"auth-token" auth-token}})))]
-    (if (= 200 status)
-      (-> body
-          (json/parse-string))
-      res)))
+        res (fn [] (let [{:as res :keys [status body]} @(http/post
+                                                         host
+                                                         (cond-> {:multipart multipart}
+                                                           tag (merge {:query-params {:tag (str namespace "/" tag)}
+                                                                       :headers {"auth-token" auth-token}})))]
+                     (if (= 200 status)
+                       (-> body
+                           (json/parse-string))
+                       res)))]
+    (if async
+      (future (res))
+      (res))))
 
 (defn put [{:as opts
-            :keys [cas-host tags-host auth-token namespace tag target path]
+            :keys [cas-host tags-host target path]
             :or {cas-host *cas-host*
                  tags-host *tags-host*}}]
   (assert (not (every? some? #{target path}))
@@ -97,7 +103,7 @@
         (some? path) (cas-put opts)))
 
 (defn get [{:as opts
-            :keys [cas-host tags-host namespace tag path]
+            :keys [cas-host tags-host tag]
             :or {cas-host *cas-host*
                  tags-host *tags-host*}}]
   (if (some? tag)
