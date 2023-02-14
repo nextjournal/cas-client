@@ -70,7 +70,8 @@
                                    :hash hash
                                    :filename (fs/file-name path)
                                    :content f}))))
-        {files-to-upload false files-already-uploaded true} (group-by #(cas-exists? {:key (:hash %)}) files)
+        {files-to-upload false files-already-uploaded true} (group-by #(cas-exists? {:host host
+                                                                                     :key (:hash %)}) files)
         multipart (concat (map (fn [{:keys [path filename content]}]
                                  {:name path
                                   :filename filename
