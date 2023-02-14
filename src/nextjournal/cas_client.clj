@@ -5,13 +5,8 @@
             [nextjournal.cas-client.hashing :as h]
             [cheshire.core :as json]
             [babashka.fs :as fs]
-            [org.httpkit.client :as http]
-            [org.httpkit.sni-client :as sni-client]
+            [babashka.http-client :as http]
             [ring.util.codec :as ring-codec]))
-
-;; Change default client for the whole application:
-;; Needed for TLS connections using SNI
-(alter-var-root #'org.httpkit.client/*default-client* (fn [_] sni-client/default-client))
 
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
@@ -19,22 +14,22 @@
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
                      async false}}]
-  (cond-> (http/post (str  host "/" namespace "/" tag)
-                     {:headers {"auth-token" auth-token
-                                "content-type" "plain/text"}
-                      :body target})
-    (not async) (deref)))
+  (http/post (str  host "/" namespace "/" tag)
+             {:headers {"auth-token" auth-token
+                        "content-type" "plain/text"}
+              :body target
+              :async async}))
 
 (defn tag-url [{:keys [host namespace tag path]
                 :or {host *tags-host*}}]
   (str host "/" namespace "/" tag (when path (str "/" path))))
 
 (defn tag-get [opts]
-  (-> @(http/get (tag-url opts))
+  (-> (http/get (tag-url opts))
       :body))
 
 (defn tag-exists? [opts]
-  (-> @(http/head (tag-url opts))
+  (-> (http/head (tag-url opts) {:throw false})
       :status
       (= 200)))
 
@@ -47,14 +42,13 @@
            (str "?" query-params)))))
 
 (defn cas-exists? [opts]
-  (-> @(http/head (cas-url opts))
+  (-> (http/head (cas-url opts) {:throw false})
       :status
       (= 200)))
 
 (defn cas-get [opts]
-  (-> @(http/get (cas-url opts))
-      :body
-      slurp))
+  (-> (http/get (cas-url opts))
+      :body))
 
 (defn cas-put [{:keys [path host auth-token namespace tag async]
                 :or {host *cas-host*
@@ -68,28 +62,28 @@
                                              (h/hash s))]
                                   {:path (str/replace path prefix "")
                                    :hash hash
-                                   :filename (fs/file-name path)
+                                   :file-name (fs/file-name path)
                                    :content f}))))
         {files-to-upload false files-already-uploaded true} (group-by #(cas-exists? {:host host
                                                                                      :key (:hash %)}) files)
-        multipart (concat (map (fn [{:keys [path filename content]}]
+        multipart (concat (map (fn [{:keys [path file-name content]}]
                                  {:name path
-                                  :filename filename
+                                  :file-name file-name
                                   :content content}) files-to-upload)
-                          (map (fn [{:keys [path filename hash]}]
+                          (map (fn [{:keys [path file-name hash]}]
                                  {:name path
-                                  :filename filename
+                                  :file-name file-name
                                   :content-type "application/clerk-cas-hash"
                                   :content hash}) files-already-uploaded))
-        res (fn [] (let [{:as res :keys [status body]} @(http/post
-                                                         host
-                                                         (cond-> {:multipart multipart}
-                                                           tag (merge {:query-params {:tag (str namespace "/" tag)}
-                                                                       :headers {"auth-token" auth-token}})))]
+        res (fn [] (let [{:as res :keys [status body]} (http/post
+                                                        host
+                                                        (cond-> {:multipart multipart}
+                                                          tag (merge {:query-params {:tag (str namespace "/" tag)}
+                                                                      :headers {"auth-token" auth-token}})))]
                      (if (= 200 status)
                        (-> body
                            (json/parse-string))
-                       (throw (ex-info "CAS put failed" {:res res})))))]
+                       res)))]
     (if async
       (future (res))
       (res))))

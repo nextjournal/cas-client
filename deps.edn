@@ -1,10 +1,10 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        http-kit/http-kit {:mvn/version "2.6.0"}
         mvxcvi/multiformats {:git/url "https://github.com/borkdude/greglook-clj-multiformats/"
                              :git/sha "9c516d5039052f1e12f875cc29e40f6638e521e4"}
         com.taoensso/timbre {:mvn/version "6.0.4"}
         babashka/fs {:mvn/version "0.2.12"}
+        org.babashka/http-client {:mvn/version "0.1.4"}
         cheshire/cheshire {:mvn/version "5.11.0"}
         babashka/cli {:git/url "https://github.com/babashka/cli"
                       :git/sha "9d83d70c5c030a075bb82c0eb41b6281ae0104d8"}
