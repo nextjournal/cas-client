@@ -89,7 +89,7 @@
                      (if (= 200 status)
                        (-> body
                            (json/parse-string))
-                       res)))]
+                       (throw (ex-info "CAS put failed" {:res res})))))]
     (if async
       (future (res))
       (res))))
