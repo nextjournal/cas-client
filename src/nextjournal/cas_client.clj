@@ -47,7 +47,7 @@
            (str "?" query-params)))))
 
 (defn cas-exists? [opts]
-  (-> (http/head (cas-url opts))
+  (-> (http/head (cas-url opts) {:throw false})
       :status
       (= 200)))
 
