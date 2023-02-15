@@ -105,6 +105,14 @@
     (tag-get (assoc opts :host tags-host))
     (cas-get (assoc opts :host cas-host))))
 
+(defn exists? [{:as opts
+            :keys [cas-host tags-host tag]
+            :or {cas-host *cas-host*
+                 tags-host *tags-host*}}]
+  (if (some? tag)
+    (tag-exists? (assoc opts :host tags-host))
+    (cas-exists? (assoc opts :host cas-host))))
+
 (comment
   (def r (put {:path "test/resources/foo"}))
   (def r (put {:cas-host "http://cas.dev.clerk.garden:8090"
