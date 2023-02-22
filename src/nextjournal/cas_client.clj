@@ -25,8 +25,12 @@
   (str host "/" namespace "/" tag (when path (str "/" path))))
 
 (defn tag-get [opts]
-  (-> (http/get (tag-url opts))
-      :body))
+  (try (-> (http/get (tag-url opts))
+           :body)
+       (catch clojure.lang.ExceptionInfo e
+         (if (= 404 (:status (ex-data e)))
+           nil
+           (throw e)))))
 
 (defn tag-exists? [opts]
   (-> (http/head (tag-url opts) {:throw false})
@@ -47,8 +51,12 @@
       (= 200)))
 
 (defn cas-get [opts]
-  (-> (http/get (cas-url opts))
-      :body))
+  (try (-> (http/get (cas-url opts))
+       :body)
+       (catch clojure.lang.ExceptionInfo e
+         (if (= 404 (:status (ex-data e)))
+           nil
+           (throw e)))))
 
 (defn cas-put [{:keys [path host auth-token namespace tag async]
                 :or {host *cas-host*
