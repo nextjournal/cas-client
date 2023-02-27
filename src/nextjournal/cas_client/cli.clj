@@ -1,7 +1,10 @@
 (ns nextjournal.cas-client.cli
   (:require [babashka.cli :as cli]
+            [babashka.fs :as fs]
             [nextjournal.cas-client :as cas-client]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]))
 
 (declare cmds)
 
@@ -13,7 +16,10 @@
    :path {:desc "Filesystem path"
           :coerce :string}
    :filename {:desc "Filename to save as"}
-   :content-type {:desc "Content-Type to request"}})
+   :content-type {:desc "Content-Type to request"}
+
+   :help {:coerce :boolean}
+   :conf {:coerce :string}})
 
 (defn print-help [_]
   (let [available-cmds (->> cmds
@@ -22,6 +28,40 @@
     (println (str/join "\n" (concat ["available commands:"
                                      ""]
                                     available-cmds)))))
+
+
+(defn config-location []
+  (str (fs/path (System/getenv "HOME") ".config/lager/config.edn")))
+
+(defn parse-path [path]
+  (map keyword (str/split path #"\.")))
+
+(defn edn-config []
+  (try (with-open [r (java.io.PushbackReader. (io/reader (io/file (config-location))))]
+         (edn/read r))
+       (catch Exception _ {})))
+
+(defn read-config [path]
+  (if path
+    (get-in (edn-config) (parse-path path))
+    (edn-config)))
+
+(defn set-config! [path value]
+  (fs/create-dirs (fs/parent (config-location)))
+  (spit (config-location) (assoc-in (edn-config) (parse-path path) value)))
+
+(defn config [{:keys [args]}]
+  (let [[path value] args]
+    (if value
+      (set-config! path value)
+      (prn (read-config path)))))
+
+(defn wrap-conf-file [f]
+  (fn [{:as opts :keys [conf]}]
+    (let [opts (merge (edn-config)
+                      (some-> conf slurp edn/read-string)
+                      (dissoc opts :conf))]
+      (f opts))))
 
 (defn- wrap-error-reporting [f]
   (fn [x]
@@ -42,11 +82,15 @@
   (fn [{:keys [opts]}]
     ((-> f
          (wrap-opts-reporting)
-         (wrap-error-reporting)) opts)))
+         (wrap-error-reporting)
+         (wrap-conf-file)) opts)))
 
 (def cmds [{:cmds ["put"] :fn (wrap cas-client/put) :args->opts [:path]}
            {:cmds ["get"] :fn (wrap cas-client/get)}
+           {:cmds ["exists"] :fn (wrap cas-client/exists?)}
+           {:cmds ["config"] :fn config}
            {:cmds ["help"] :fn print-help}
+           {:cmds ["debug"] :fn prn}
            {:cmds [] :fn print-help}])
 
 (defn -main [& _args]
