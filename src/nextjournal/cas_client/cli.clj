@@ -23,7 +23,7 @@
                                      ""]
                                     available-cmds)))))
 
-(defn- wrap [f]
+(defn- wrap-error-reporting [f]
   (fn [x]
     (let [res (f x)]
       (if-let [error (:error res)]
@@ -31,7 +31,20 @@
           (println error))
         (println res)))))
 
-(def cmds [{:cmds ["put"] :fn (wrap cas-client/put)}
+(defn wrap-opts-reporting [f]
+  (fn [opts]
+    (when (some-> (System/getenv "DEBUG")
+                  (Boolean/valueOf))
+      (prn opts))
+    (f opts)))
+
+(defn wrap [f]
+  (fn [{:keys [opts]}]
+    ((-> f
+         (wrap-opts-reporting)
+         (wrap-error-reporting)) opts)))
+
+(def cmds [{:cmds ["put"] :fn (wrap cas-client/put) :args->opts [:path]}
            {:cmds ["get"] :fn (wrap cas-client/get)}
            {:cmds ["help"] :fn print-help}
            {:cmds [] :fn print-help}])
@@ -42,3 +55,5 @@
                 {:spec spec
                  :exec-args {:deps-file "deps.edn"}})
   nil)
+
+(-main)
