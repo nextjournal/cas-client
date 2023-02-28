@@ -5,7 +5,7 @@
             [nextjournal.cas-client.hashing :as h]
             [cheshire.core :as json]
             [babashka.fs :as fs]
-            [babashka.http-client :as http]
+            [babashka.http-client :as http] :reload
             [ring.util.codec :as ring-codec]))
 
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
