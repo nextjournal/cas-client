@@ -14,6 +14,7 @@
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
                      async false}}]
+  (assert (some? auth-token) "Need a Github auth token to set tags")
   (http/post (str  host "/" namespace "/" tag)
              {:headers {"auth-token" auth-token
                         "content-type" "plain/text"}
@@ -61,6 +62,8 @@
 (defn cas-put [{:keys [path host auth-token namespace tag async]
                 :or {host *cas-host*
                      async false}}]
+  (when tag
+    (assert (some? auth-token) "Need a Github auth token to set tags"))
   (let [f (io/file path)
         prefix (if (fs/directory? path) (str f "/") "")
         files (->> (file-seq f)
