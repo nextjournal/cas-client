@@ -6,7 +6,7 @@
             [cheshire.core :as json]
             [babashka.fs :as fs]
             [babashka.http-client :as http]
-            [ring.util.codec :as ring-codec]))
+            [ring.util.codec :as ring-codec] :reload))
 
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
