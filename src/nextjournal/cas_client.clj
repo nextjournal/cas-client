@@ -54,13 +54,13 @@
 
 (defn cas-get [opts]
   (try (-> (http/get (cas-url opts))
-       :body)
+           :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
            nil
            (throw e)))))
 
-(defn cas-put [{:keys [path host auth-token namespace tag async]
+(defn cas-put [{:keys [path host auth-token namespace tag async manifest-type]
                 :or {host *cas-host*
                      async false}}]
   (when tag
@@ -90,8 +90,9 @@
         res (fn [] (let [{:as res :keys [status body]} (http/post
                                                         host
                                                         (cond-> {:multipart multipart}
-                                                          tag (merge {:query-params {:tag (str namespace "/" tag)}
-                                                                      :headers {"auth-token" auth-token}})))]
+                                                          manifest-type (assoc-in [:query-params :manifest-type] manifest-type)
+                                                          tag (assoc-in [:query-params :tag] (str namespace "/" tag))
+                                                          tag (assoc-in [:headers "auth-token"] auth-token)))]
                      (if (= 200 status)
                        (-> body
                            (json/parse-string))
@@ -118,9 +119,9 @@
     (cas-get (assoc opts :host cas-host))))
 
 (defn exists? [{:as opts
-            :keys [cas-host tags-host tag]
-            :or {cas-host *cas-host*
-                 tags-host *tags-host*}}]
+                :keys [cas-host tags-host tag]
+                :or {cas-host *cas-host*
+                     tags-host *tags-host*}}]
   (if (some? tag)
     (tag-exists? (assoc opts :host tags-host))
     (cas-exists? (assoc opts :host cas-host))))
