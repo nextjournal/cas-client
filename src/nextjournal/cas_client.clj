@@ -53,7 +53,7 @@
       (= 200)))
 
 (defn cas-get [opts]
-  (try (-> (http/get (cas-url opts))
+  (try (-> (http/get (cas-url opts) {:as :stream})
            :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
