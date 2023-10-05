@@ -12,6 +12,8 @@
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
 
+(def client (http/client (assoc http/default-client-opts :version :http1.1)))
+
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
                      async false}}]
@@ -20,14 +22,15 @@
              {:headers {"auth-token" auth-token
                         "content-type" "plain/text"}
               :body target
-              :async async}))
+              :async async
+              :client client}))
 
 (defn tag-url [{:keys [host namespace tag path]
                 :or {host *tags-host*}}]
   (str host "/" namespace "/" tag (when path (str "/" path))))
 
 (defn tag-get [opts]
-  (try (-> (http/get (tag-url opts))
+  (try (-> (http/get (tag-url opts) {:client client})
            :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
@@ -35,7 +38,7 @@
            (throw e)))))
 
 (defn tag-exists? [opts]
-  (-> (http/head (tag-url opts) {:throw false})
+  (-> (http/head (tag-url opts) {:throw false :client client})
       :status
       (= 200)))
 
@@ -48,12 +51,12 @@
            (str "?" query-params)))))
 
 (defn cas-exists? [opts]
-  (-> (http/head (cas-url opts) {:throw false})
+  (-> (http/head (cas-url opts) {:throw false :client client})
       :status
       (= 200)))
 
 (defn cas-get [opts]
-  (try (-> (http/get (cas-url opts) {:as :stream})
+  (try (-> (http/get (cas-url opts) {:as :stream :client client})
            :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
@@ -90,7 +93,7 @@
                                   :content hash}) files-already-uploaded))
         res (fn [] (let [{:as res :keys [status body]} (http/post
                                                         host
-                                                        (cond-> {:multipart multipart}
+                                                        (cond-> {:multipart multipart :client client}
                                                           manifest-type (assoc-in [:query-params :manifest-type] manifest-type)
                                                           tag (assoc-in [:query-params :tag] (str namespace "/" tag))
                                                           tag (assoc-in [:headers "auth-token"] auth-token)))]
