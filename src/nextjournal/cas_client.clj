@@ -76,6 +76,7 @@
                                    :hash hash
                                    :file-name (fs/file-name path)
                                    :content f}))))
+        _ (assert (< (count files) 100) "Cannot upload more than 100 files at once")
         {files-to-upload false files-already-uploaded true} (group-by #(cas-exists? {:host host
                                                                                      :key (:hash %)}) files)
         multipart (concat (map (fn [{:keys [path file-name content]}]
