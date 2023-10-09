@@ -63,7 +63,7 @@
            nil
            (throw e)))))
 
-(defn cas-put [{:keys [path host auth-token namespace tag async manifest-type]
+(defn cas-put [{:keys [path host auth-token namespace tag async manifest-type force-upload]
                 :or {host *cas-host*
                      async false}}]
   (when tag
@@ -80,8 +80,10 @@
                                    :file-name (fs/file-name path)
                                    :content f}))))
         _ (assert (< (count files) 100) "Cannot upload more than 100 files at once")
-        {files-to-upload false files-already-uploaded true} (group-by #(cas-exists? {:host host
-                                                                                     :key (:hash %)}) files)
+        {files-to-upload false files-already-uploaded true} (group-by (fn [file] (if force-upload
+                                                                                   false
+                                                                                   (cas-exists? {:host host
+                                                                                                 :key (:hash file)}))) files)
         multipart (concat (map (fn [{:keys [path file-name content]}]
                                  {:name path
                                   :file-name file-name
