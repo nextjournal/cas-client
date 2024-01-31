@@ -12,7 +12,9 @@
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
 
-(def client (http/client (assoc http/default-client-opts :version :http1.1)))
+(def client (http/client (assoc http/default-client-opts
+                                :version :http1.1
+                                :connect-timeout (* 60 1000)))) ; 60s
 
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
@@ -95,7 +97,9 @@
                                   :content hash}) files-already-uploaded))
         res (fn [] (let [{:as res :keys [status body]} (http/post
                                                         host
-                                                        (cond-> {:multipart multipart :client client}
+                                                        (cond-> {:multipart multipart
+                                                                 :client client
+                                                                 :timeout (* 60 1000)} ; 60 s
                                                           manifest-type (assoc-in [:query-params :manifest-type] manifest-type)
                                                           tag (assoc-in [:query-params :tag] (str namespace "/" tag))
                                                           tag (assoc-in [:headers "auth-token"] auth-token)))]
