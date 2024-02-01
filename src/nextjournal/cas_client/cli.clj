@@ -18,6 +18,8 @@
    :filename {:desc "Filename to save as"}
    :content-type {:desc "Content-Type to request"}
 
+   :force-upload {:coerce :boolean}
+
    :help {:coerce :boolean}
    :conf {:coerce :string}})
 
@@ -93,11 +95,12 @@
            {:cmds ["debug"] :fn prn}
            {:cmds [] :fn print-help}])
 
-(defn -main [& _args]
+(defn -main [& args]
   (cli/dispatch cmds
-                *command-line-args*
+                args
                 {:spec spec
                  :exec-args {:deps-file "deps.edn"}})
   nil)
 
-(-main)
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))
