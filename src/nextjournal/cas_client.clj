@@ -13,7 +13,7 @@
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
 
 
-(System/setProperty "jdk.httpclient.keepalive.timeout" 0)
+(System/setProperty "jdk.httpclient.keepalive.timeout" "0")
 (def client (http/client (assoc http/default-client-opts
                                 :version :http1.1
                                 :connect-timeout (* 60 1000)))) ; 60s
