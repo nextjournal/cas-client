@@ -2,6 +2,7 @@
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
             [nextjournal.cas-client :as cas-client]
+            [cheshire.core :as json]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.edn :as edn]))
@@ -19,6 +20,9 @@
    :content-type {:desc "Content-Type to request"}
 
    :force-upload {:coerce :boolean}
+   :output-format {:coerce :keyword
+                   :validate #{:json :edn}
+                   :default :json}
 
    :help {:coerce :boolean}
    :conf {:coerce :string}})
@@ -56,41 +60,77 @@
   (let [[path value] args]
     (if value
       (set-config! path value)
-      (prn (read-config path)))))
+      (read-config path))))
 
 (defn wrap-conf-file [f]
-  (fn [{:as opts :keys [conf]}]
+  (fn [{:as m :keys [opts]}]
     (let [opts (merge (edn-config)
-                      (some-> conf slurp edn/read-string)
+                      (some-> (:conf opts) slurp edn/read-string)
                       (dissoc opts :conf))]
-      (f opts))))
-
-(defn- wrap-error-reporting [f]
-  (fn [x]
-    (let [res (f x)]
-      (if-let [error (:error res)]
-        (binding [*out* *err*]
-          (println error))
-        (println res)))))
+      (f (assoc m :opts opts)))))
 
 (defn wrap-opts-reporting [f]
-  (fn [opts]
+  (fn [{:as m :keys [opts]}]
     (when (some-> (System/getenv "DEBUG")
                   (Boolean/valueOf))
+      (println "options:")
       (prn opts))
-    (f opts)))
+    (f m)))
 
-(defn wrap [f]
-  (fn [{:keys [opts]}]
-    ((-> f
-         (wrap-opts-reporting)
-         (wrap-error-reporting)
-         (wrap-conf-file)) opts)))
+(defn dev-null-print-writer []
+  (java.io.PrintWriter. "/dev/null"))
 
-(def cmds [{:cmds ["put"] :fn (wrap cas-client/put) :args->opts [:path]}
-           {:cmds ["get"] :fn (wrap cas-client/get)}
-           {:cmds ["exists"] :fn (wrap cas-client/exists?)}
-           {:cmds ["config"] :fn config}
+(defn wrap-with-quiet [f]
+  (fn [{:as m :keys [opts]}]
+    (if (:quiet opts)
+      (binding [*out* (dev-null-print-writer)
+                *err* (dev-null-print-writer)]
+        (f m))
+      (f m))))
+
+(defn wrap-with-output-format [f]
+  (fn [{:as m :keys [opts]}]
+    (if-let [output-format (:output-format opts)]
+      (let [result (f (assoc-in m [:opts :quiet] true))]
+        (case output-format
+          :edn (prn result)
+          :json (println (json/encode result)))
+        result)
+      (f m))))
+
+(defn cas-get [{:keys [opts]}]
+  (io/copy (cas-client/get opts) *out*))
+
+(comment
+  (def dev-opts {:cas-host "http://cas.dev.clerk.garden:8090"
+                 :tags-host "http://storage.dev.clerk.garden:8090"
+                 :manifest-type "raw"})
+
+  (def tmp (str (fs/create-temp-dir)))
+  (spit (str tmp "/foo") "foo" )
+  (def m (cas-client/put (assoc dev-opts :path tmp )))
+  (def key-foo (get-in m ["manifest" "foo"]))
+  (cas-client/exists? (assoc dev-opts :key key-foo))
+  (slurp (cas-client/get (assoc dev-opts :key key-foo))))
+
+(defn cas-put [{:keys [opts]}]
+  (cas-client/put opts))
+
+(def cmds [{:cmds ["put"] :fn (-> cas-put
+                                  (wrap-with-quiet)
+                                  (wrap-with-output-format)
+                                  (wrap-opts-reporting)
+                                  (wrap-conf-file))
+            :args->opts [:path]}
+           {:cmds ["get"] :fn (-> cas-get
+                                  (wrap-opts-reporting)
+                                  (wrap-conf-file))}
+           {:cmds ["exists"] :fn (-> cas-client/exists?
+                                     (wrap-with-quiet)
+                                     (wrap-with-output-format)
+                                     (wrap-opts-reporting)
+                                     (wrap-conf-file))}
+           {:cmds ["config"] :fn (wrap-with-output-format config)}
            {:cmds ["help"] :fn print-help}
            {:cmds ["debug"] :fn prn}
            {:cmds [] :fn print-help}])
