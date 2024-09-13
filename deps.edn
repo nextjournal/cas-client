@@ -1,15 +1,15 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         mvxcvi/multiformats {:mvn/version "0.3.107"}
-        com.taoensso/timbre {:mvn/version "6.3.1"}
-        babashka/fs {:mvn/version "0.5.20"}
-        org.babashka/http-client {:mvn/version "0.4.15"}
-        cheshire/cheshire {:mvn/version "5.12.0"}
+        com.taoensso/timbre {:mvn/version "6.5.0"}
+        babashka/fs {:mvn/version "0.5.22"}
+        org.babashka/http-client {:mvn/version "0.4.21"}
+        cheshire/cheshire {:mvn/version "5.13.0"}
         babashka/cli {:git/url "https://github.com/babashka/cli"
-                      :git/sha "8ec3e9b8e60b1d37f2377b86c5c448f3938a0b7d"}
+                      :git/sha "de2569ff65fbb7be65a31915bd56960a9b7b548b"}
         ring/ring-codec {:mvn/version "1.2.0"}}
  :aliases
  {:dev {:extra-paths ["dev"]
-        :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.15.957"}
-                     org.clojars.abhinav/snitch {:mvn/version "0.1.14"}}}
+        :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.16.1016"}
+                     org.clojars.abhinav/snitch {:mvn/version "0.1.15"}}}
   :neil {:project {:name cas-client/cas-client}}}}
