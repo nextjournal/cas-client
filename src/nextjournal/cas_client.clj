@@ -5,9 +5,8 @@
             [nextjournal.cas-client.hashing :as h]
             [cheshire.core :as json]
             [babashka.fs :as fs]
-            [ring.util.codec :as ring-codec]))
-;; babashka > 1.0.170 has an old version of http-client baked in, which does not yet support multipart-upload
-(require '[babashka.http-client :as http] :reload)
+            [ring.util.codec :as ring-codec]
+            [babashka.http-client :as http]))
 
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")
