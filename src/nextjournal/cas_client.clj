@@ -13,9 +13,11 @@
 
 
 (System/setProperty "jdk.httpclient.keepalive.timeout" "0")
+(def timeout (* 120 1000)) ; 120s
+
 (def client (http/client (assoc http/default-client-opts
                                 :version :http1.1
-                                :connect-timeout (* 60 1000)))) ; 60s
+                                :connect-timeout timeout)))
 
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
@@ -100,7 +102,7 @@
                                                         host
                                                         (cond-> {:multipart multipart
                                                                  :client client
-                                                                 :timeout (* 60 1000)} ; 60 s
+                                                                 :timeout timeout}
                                                           manifest-type (assoc-in [:query-params :manifest-type] manifest-type)
                                                           tag (assoc-in [:query-params :tag] (str namespace "/" tag))
                                                           tag (assoc-in [:headers "auth-token"] auth-token)))]
