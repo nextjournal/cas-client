@@ -19,23 +19,26 @@
                                 :version :http1.1
                                 :connect-timeout timeout)))
 
+(def default-request-opts {:client client
+                :timeout timeout})
+
 (defn tag-put [{:keys [host auth-token namespace tag target async]
                 :or {host *tags-host*
                      async false}}]
   (assert (some? auth-token) "Need a Github auth token to set tags")
   (http/post (str  host "/" namespace "/" tag)
-             {:headers {"auth-token" auth-token
-                        "content-type" "plain/text"}
-              :body target
-              :async async
-              :client client}))
+             (merge default-request-opts
+                    {:headers {"auth-token" auth-token
+                               "content-type" "plain/text"}
+                     :body target
+                     :async async})))
 
 (defn tag-url [{:keys [host namespace tag path]
                 :or {host *tags-host*}}]
   (str host "/" namespace "/" tag (when path (str "/" path))))
 
 (defn tag-get [opts]
-  (try (-> (http/get (tag-url opts) {:client client})
+  (try (-> (http/get (tag-url opts) default-request-opts)
            :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
@@ -43,7 +46,7 @@
            (throw e)))))
 
 (defn tag-exists? [opts]
-  (-> (http/head (tag-url opts) {:throw false :client client})
+  (-> (http/head (tag-url opts) (assoc default-request-opts :throw false))
       :status
       (= 200)))
 
@@ -56,12 +59,12 @@
            (str "?" query-params)))))
 
 (defn cas-exists? [opts]
-  (-> (http/head (cas-url opts) {:throw false :client client})
+  (-> (http/head (cas-url opts) (assoc default-request-opts :throw false))
       :status
       (= 200)))
 
 (defn cas-get [opts]
-  (try (-> (http/get (cas-url opts) {:as :stream :client client})
+  (try (-> (http/get (cas-url opts) (assoc default-request-opts :as :stream))
            :body)
        (catch clojure.lang.ExceptionInfo e
          (if (= 404 (:status (ex-data e)))
@@ -100,9 +103,7 @@
                                   :content hash}) files-already-uploaded))
         res (fn [] (let [{:as res :keys [status body]} (http/post
                                                         host
-                                                        (cond-> {:multipart multipart
-                                                                 :client client
-                                                                 :timeout timeout}
+                                                        (cond-> (assoc default-request-opts :multipart multipart)
                                                           manifest-type (assoc-in [:query-params :manifest-type] manifest-type)
                                                           tag (assoc-in [:query-params :tag] (str namespace "/" tag))
                                                           tag (assoc-in [:headers "auth-token"] auth-token)))]
