@@ -1,12 +1,12 @@
 (ns nextjournal.cas-client
   (:refer-clojure :exclude [get])
-  (:require [clojure.java.io :as io]
+  (:require [babashka.fs :as fs]
+            [babashka.http-client :as http]
+            [cheshire.core :as json]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [nextjournal.cas-client.hashing :as h]
-            [cheshire.core :as json]
-            [babashka.fs :as fs]
-            [ring.util.codec :as ring-codec]
-            [babashka.http-client :as http]))
+            [ring.util.codec :as ring-codec]))
 
 (defonce ^:dynamic *cas-host* "https://cas.clerk.garden")
 (defonce ^:dynamic *tags-host* "https://storage.clerk.garden")

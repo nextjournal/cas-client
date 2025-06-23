@@ -1,6 +1,7 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        mvxcvi/multiformats {:mvn/version "0.3.107"}
+        mvxcvi/multiformats {:mvn/version "1.0.125"}
+        mvxcvi/alphabase {:mvn/version "3.0.185"}
         com.taoensso/timbre {:mvn/version "6.5.0"}
         babashka/fs {:mvn/version "0.5.22"}
         org.babashka/http-client {:mvn/version "0.4.21"}
